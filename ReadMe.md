@@ -46,13 +46,13 @@ Na pasta `/cerebro`, instale as bibliotecas necessárias e inicie o servidor:
 
 ```bash
 pip install fastapi uvicorn websockets
-
-# Execução (Caso o comando uvicorn não seja reconhecido diretamente, utilize o prefixo python -m)
+```
+#### Execução (Caso o comando uvicorn não seja reconhecido diretamente, utilize o prefixo python -m)
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 O servidor estará ativo em localhost:8000.
 
-3. Sintonizando o Pinky (Frontend)
+### 3. Sintonizando o Pinky (Frontend)
 Navegue até a pasta /pinky.
 
 Abra o arquivo index.html em seu navegador.
@@ -88,6 +88,6 @@ Utilize os comandos abaixo no chat para validar a resiliência e a lógica do si
 ---
 
 ## 📬 Contato e Suporte
-Dúvidas, sugestões de melhoria ou interesse em apoiar o projeto (doações e parcerias)? Entre em contato: **edu.berbet@gmail.com** ou **edu.berbet@hotmail.com**
+Dúvidas, sugestões de melhoria ou interesse em apoiar o projeto (doações e parcerias) Entre em contato: **edu.berbet@gmail.com** ou **edu.berbet@hotmail.com**
 
 *LUMI: Menos respostas prontas, mais mentes brilhantes.*
