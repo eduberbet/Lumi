@@ -1,55 +1,93 @@
-# 🔦 Projeto LUMI
-### **L**anterna **U**niversal de **M**ediação **I**nteligente
+# LUMI - Lanterna Universal de Mediação Inteligente 💡
 
-O **LUMI** é um ecossistema de Inteligência Artificial para suporte à aprendizagem, operando **100% offline** e focado no método socrático. Projetado para o ambiente de sala de aula, ele atua como uma "lanterna digital": ilumina o caminho do raciocínio sem entregar a resposta pronta ao estudante.
+**Conceito:** A Inteligência Artificial como uma lanterna para o raciocínio.
 
----
-
-## 🎯 O Conceito
-Diferente de assistentes genéricos que fornecem soluções diretas, o Lumi utiliza o material didático fornecido pelo professor (via RAG - Retrieval-Augmented Generation) para guiar o aluno através de dicas, analogias e perguntas de retorno.
-
-> *"A Lumi não te carrega no colo; ela ilumina onde você deve pisar."*
+A **LUMI** é um ecossistema de apoio ao professor desenvolvido para rodar 100% offline. Ela não entrega respostas; ela media o raciocínio socrático utilizando materiais didáticos (PDFs e Post-its) fornecidos pelo docente.
 
 ---
 
-## 🏗️ Arquitetura Assimétrica: Cérebro & Pinky
-O projeto utiliza uma divisão estratégica de carga e segurança para garantir performance e simplicidade:
+## 👐 Projeto Open Source & Comunidade
+Este é um projeto **Open Source** (Código Aberto). Acreditamos que a tecnologia educacional deve ser acessível, auditável e construída coletivamente.
 
-*   **🧠 O Cérebro (Server-Side):** Roda em hardware robusto local (Host). Concentra o processamento pesado de LLM (Large Language Model), Banco de Dados Vetorial e Cache Semântico. É a central de comando restrita ao professor.
-*   **🐭 O Pinky (Client-Side):** Interface leve que roda no navegador de qualquer tablet ou smartphone via Wi-Fi local. Gerencia a interação de voz (STT/TTS), acessibilidade e a "experiência de espera" lúdica com enxertos de texto.
-
----
-
-## ✨ Funcionalidades Principais
-- **Mediação Socrática:** Escalonamento de dicas em 3 níveis (Conceitual, Analógico e Localização).
-- **Zero Cloud (Privacidade Total):** 100% offline por design. Nenhum dado de áudio ou texto sai da rede local da escola.
-- **Resiliência Lúdica:** O Pinky gerencia latências de hardware com humor ("tapa-buracos" de fala) e coerência narrativa.
-- **Soberania Docente:** Painel administrativo isolado para gestão de PDFs, "Post-its" pedagógicos e *Kill Switch* de emergência.
-- **Cache Semântico:** Identifica dúvidas recorrentes para economizar processamento e gerar relatórios de "calor" pedagógico.
+* **Contribua:** Sugestões de melhoria na lógica socrática, otimização de performance para hardware antigo e novas interfaces de acessibilidade são muito bem-vindas.
+* **Filosofia:** Priorizamos o "Simples Bem Feito". Se uma funcionalidade pode ser resolvida com um `Regex` na borda (Pinky) em vez de onerar a LLM (Cérebro), esse é o caminho que seguimos.
+* **Privacidade:** Nenhuma contribuição deve quebrar a regra de "Zero Nuvem". A Lumi nasce e morre na rede local da escola.
 
 ---
 
-## 🛠️ Stack Tecnológica (Open Core)
-- **Linguagem:** Python 3.10+
-- **LLM Engine:** [Ollama](https://ollama.com) (Llama 3 / Phi-3)
-- **Interface:** Streamlit / WebSockets
-- **Vetor DB:** ChromaDB
-- **Voz:** Web Speech API (Nativa do dispositivo do aluno)
+## 🏗️ Arquitetura Cérebro-Pinky
+- **O Cérebro (Backend):** Servidor Python (Ollama/Llama 3 + ChromaDB). Onde mora a inteligência e o controle do professor.
+- **O Pinky (Frontend):** Interface leve em JS Vanilla/Web Speech API. Onde o aluno interage com a Lumi.
 
 ---
 
-## 📂 Estrutura de Documentação
-Para entender as camadas técnicas e pedagógicas do projeto, consulte a pasta `/docs`:
-- **[DOC-01]** Visão e Escopo do Projeto
-- **[DOC-02]** Arquitetura Técnica Detalhada (Cérebro-Pinky)
-- **[DOC-03]** UX, Diálogo e Protocolos de Resiliência
-- **[DOC-04]** Segurança, Portas de Rede e Protocolos de Acesso
-- *(Nota: O [DOC-05] - Dicionário de Prompts e Lógica de Negócio é privado e não consta neste repositório).*
+## 🗺️ Roadmap de Desenvolvimento/Implementação 
+
+| Fase | Nome | Status | Descrição |
+| :--- | :--- | :--- | :--- |
+| Fase 0 | Cérebro Simulado | ✅ Concluído | Criação do servidor de testes (Mock) e comandos de depuração (Latência, Kill Switch, Drible). |
+| Fase 1 | Alpha (Conexão) | ✅ Concluído | Estabilização do WebSocket e JSON base para nomes simples/duplas. |
+| **Fase 2** | **Alpha UX (Borda)** | 🔵 **ATUAL** | Interface do Círculo Radiante, Filtros de Papo Furado e Gestão de Silêncio. |
+| Fase 3 | Lumi Pocket | ⚪ Planejado | Versão estática para GitHub Sites (Vitrine de demonstração). |
+| Fase 4 | Beta (O Despertar) | ⚪ Planejado | Integração com LLM real e Validação de Sucesso com argumento. |
+| Fase 5 | Beta RAG (Grupo) | ⚪ Planejado | Modo Dupla Ativo e consulta profunda a PDFs e Post-its. |
+| Fase 6 | Lumi 1.0 (Mestre) | ⚪ Planejado | Caderno de Erros funcional e Gestão de Fila de Hardware. |
 
 ---
 
-## ⚠️ Licença e Modelo de Negócio
-Este é um projeto de **Open Core**. A infraestrutura de comunicação, motores de áudio básicos e interface responsiva são abertos para a comunidade. A inteligência socrática avançada, os enxertos dinâmicos e os módulos de relatório pedagógico são partes integrantes do **Lumi Core/Pro** (Segredo de Negócio).
+## 🛠️ Guia de Implementação (Tutorial)
+
+### 1. Requisitos do Sistema
+* **Python 3.10 ou superior.**
+* Dependências: `fastapi`, `uvicorn`, `websockets`.
+
+### 2. Preparando o Cérebro (Backend)
+Na pasta `/cerebro`, instale as bibliotecas necessárias e inicie o servidor:
+
+```bash
+pip install fastapi uvicorn websockets
+
+# Execução (Caso o comando uvicorn não seja reconhecido diretamente, utilize o prefixo python -m)
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+O servidor estará ativo em localhost:8000.
+
+3. Sintonizando o Pinky (Frontend)
+Navegue até a pasta /pinky.
+
+Abra o arquivo index.html em seu navegador.
+
+O status deve exibir "Sintonizada" (conexão via WebSocket estabelecida).
+
+## 🧪 Protocolos de Teste (Fase 1)
+
+Utilize os comandos abaixo no chat para validar a resiliência e a lógica do sistema:
+
+* **`teste_latencia`**: Simula um atraso de 15 segundos no Cérebro. 
+    * **Objetivo:** Validar se o Pinky mantém a animação de "captando" e se o Alfaiate visual funciona.
+* **`teste_drible`**: Simula uma tentativa de desviar do assunto pedagógico. 
+    * **Objetivo:** Validar o filtro de mensagens e o alerta de foco.
+* **`ajuda com a aula`**: Solicita informações sobre o conteúdo acadêmico. 
+    * **Objetivo:** Validar a leitura do arquivo físico em `/cerebro/data/aula.txt`.
+* **Teste de Resiliência (Queda)**: Encerre o processo do Python no terminal (Ctrl+C).
+    * **Objetivo:** O Pinky deve mudar para o estado cinza (`lumi-off`) e tentar reconectar automaticamente a cada 3 segundos.
 
 ---
-*Desenvolvido como um projeto de inovação em tecnologia educacional.*
+
+## 📚 Índice da Documentação
+1. **[DOC-01] Visão e Escopo:** Identidade e objetivos pedagógicos.
+2. **[DOC-02] Arquitetura Técnica:** Diagrama de rede, portas e fluxo de dados.
+3. **[DOC-03] UX e Diálogo:** Estados de luz, resiliência e **gestão de silêncio**.
+4. **[DOC-04] Segurança:** Protocolos de acesso e Kill Switch.
+5. **[DOC-05] Dicionário de Prompts:** Regras socráticas e **tratativa de papo furado**.
+6. **[DOC-06] Guia de Post-its:** Como o professor sopra dicas no ouvido da IA.
+7. **[DOC-07] Caderno de Erros:** Dashboard de calor e **logs de inatividade**.
+8. **[DOC-08] Expansão:** Inteligência de borda e **interação em dupla**.
+9. **[DOC-09] Roadmap Detalhado:** O plano de voo completo do projeto.
+
+---
+
+## 📬 Contato e Suporte
+Dúvidas, sugestões de melhoria ou interesse em apoiar o projeto (doações e parcerias)? Entre em contato: **edu.berbet@gmail.com** ou **edu.berbet@hotmail.com**
+
+*LUMI: Menos respostas prontas, mais mentes brilhantes.*

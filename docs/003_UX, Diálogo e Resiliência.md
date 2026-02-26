@@ -1,42 +1,51 @@
-🎭 [DOC-03] UX, Diálogo e Resiliência: A Alma da LUMI
-Versão: 1.0
-Conceito: Simples Bem Feito / Humor Lúdico-Pedagógico
-Foco: Naturalidade, Redução de Ansiedade e Segurança de Conteúdo.
+# [DOC-03] UX, Diálogo e Resiliência: A Alma da LUMI
 
-1. Interface de Interação (O Botão "Chamar")
-Para garantir clareza no turno de fala em ambientes ruidosos:
-Ação: Botão grande e central com ícone de lanterna.
-Mecânica: "Toque para falar". O Pinky sinaliza visualmente (pulsação) que está ouvindo.
-Tratamento de "Lixo" (STT de Baixa Confiança):
-Se o texto gerado for vazio, curto demais ou ininteligível, Lumi responde de forma leve: "Não entendi direito, [Nome]. Pode repetir pra mim?" ou "Puxa, minha audição falhou agora. Pode falar de novo?".
+**Versão:** 3.0 
+**Conceito:** A Inteligência Artificial como uma lanterna para o raciocínio.  
+**Foco:** Naturalidade, Redução de Ansiedade e Autonomia do Aluno.
 
-2. A Logica da "Espera Ativa" (Tapa-Buraco)
-Para mitigar a latência do Cérebro sem ser repetitivo ou robótico:
-Gatilho Inicial: 3 segundos de silêncio do Cérebro.
-Variabilidade Temporal (O Respiro): O Pinky não falará em intervalos fixos. Cada nova frase de espera adiciona um "atraso randômico" de 1s a 3s para simular uma reação humana imprevisível.
-Regra do Alfaiate (O Pós-Piada):
-Intervalo Mínimo de 2s: Mesmo que o Cérebro responda instantaneamente após a piada, o Pinky aguarda 2 segundos para iniciar o enxerto ("Achei!"). Isso evita o efeito "Derrubei a lente/Achei" em menos de um segundo, que soa falso.
+---
 
-3. Famílias de Frases (Rodízio de Humor)
-O Pinky sorteará frases de diferentes categorias para manter o frescor da interação:
-Família	Exemplos de Frases (Leves e Simples)
-Atrapalhada	"Eita, derrubei minhas lentes... deixa eu limpar pra ler melhor." / "Onde foi que eu deixei meu marcador de página?"
-Esforço	"Essa parte do texto é densa! Estou mergulhando fundo aqui." / "Estou subindo a montanha de informações, já chego no topo!"
-Curiosidade	"Hummm... que assunto interessante, estou me perdendo nos detalhes aqui!" / "Nossa, nunca tinha parado pra ler isso com tanta calma."
-Reflexiva	"Estou ligando os pontos... peraí que a lanterna está focando." / "Deixa eu conferir se entendi bem o que o autor quis dizer..."
+## 1. Identidade e Interface de Interação
+A Lumi não é um personagem; ela é a própria radiação pedagógica. A interface deve ser minimalista, eliminando elementos que distraiam do foco central: o conhecimento.
 
-4. O Fluxo de Diálogo "Lumi" (Standard)
-Aluno: Aperta botão e pergunta.
-Lumi (Cérebro): Responde rápido? -> Vai direto para a Dica.
-Lumi (Cérebro): Demorou +3s? -> Pinky assume: "Peraí, [Nome], estou limpando minhas lentes...".
-Lumi (Pinky): Espera o JSON do Cérebro + Gap de 2s -> Pinky costura: "Achei! [Nome], veja bem: o texto diz que...".
+* **O Foco (Círculo Radiante):** Um círculo central que pulsa organicamente no Pinky. Não há botões de "enviar" ou "parar" de forma textual. O ato de tocar ou falar com o círculo inicia a sintonização.
+* **Feedback Visual de Estado:**
+    * **Captando:** Pulsação rítmica, vibrante e dourada. O brilho expande e contrai simulando uma escuta ativa (Glow dinâmico).
+    * **Processando (Sussurro):** O brilho se concentra no núcleo, emitindo pequenas partículas de luz (faíscas). É o estado onde o "Alfaiate" entra em ação com as frases de espera.
+    * **Iluminando (Falando):** A luz se expande suavemente para a área de texto, como um amanhecer que revela o conteúdo da dica socrática.
 
-5. Resiliência e Pane (O "Grito de Socorro")
-Se o Cérebro não responder após 20 segundos (Timeout Crítico):
-Narrativa: A Lumi assume uma falha física amigável.
-Frase: "Ah não, [Nome]! Minha lanterna apagou de vez e não quer ligar. Pode avisar o professor que eu preciso de um ajuste técnico?".
-Alerta Visual: O Pinky exibe um ícone de "Manutenção" e trava a entrada de áudio até o professor dar o comando de "Reset" no Cérebro.
+---
 
-6. Acessibilidade e Inclusão
-Visual: O texto da dica sempre aparece na tela enquanto a Lumi fala (Close Caption).
-Auditiva: O aluno pode clicar na frase escrita para a Lumi repetir a última dica, caso não tenha ouvido bem devido ao barulho da sala.
+## 2. Gestão de Silêncio e Inatividade (O Brilho que Enfraquece)
+Diferente de IAs passivas, a Lumi monitora o engajamento. Se o aluno parar de interagir, a Lumi proativamente tenta reanimar a conexão para evitar a dispersão em sala de aula.
+
+* **Estágio 1 - Chamado de Luz (2 minutos de inatividade):**
+    * **Visual:** O círculo muda de dourado para um tom âmbar suave e começa a oscilar como uma chama de vela ao vento.
+    * **Áudio:** *"Sua luz está ficando fraquinha, [NOME]. Ainda está por aqui ou quer que eu foque em outro assunto?"*
+* **Estágio 2 - Modo Repouso (5 minutos de inatividade):**
+    * **Visual:** A luz se reduz a um único ponto branco quase imperceptível no centro da tela (pixel de luz).
+    * **Áudio:** *"Vou poupar energia por agora para não ofuscar seu descanso. Quando quiser brilhar de novo, é só me chamar!"*
+    * **Log:** O evento é enviado ao Cérebro e registrado no **[DOC-07] Caderno de Erros** como "Inatividade Crítica".
+
+---
+
+## 3. Resiliência Narrativa (O Alfaiate)
+Para garantir que a latência do hardware local ou do processamento da LLM não quebre o fluxo, o Pinky utiliza a lógica de "costura" de frases:
+
+* **Espera Curta (até 7s):** "Sintonizando os livros..." -> *Resposta:* "Achei! Veja o que o material diz..."
+* **Espera Longa (7s a 20s):** "Estou mergulhando fundo nessa ideia, é uma pergunta brilhante!" -> *Resposta:* "Voltei com algo interessante! Seguinte..."
+
+---
+
+## 4. Protocolo de Erro de Frequência (Ruído)
+Em ambientes escolares ruidosos, se o reconhecimento de voz (STT) falhar ou for inconclusivo:
+* **Ação:** A Lumi assume o erro de forma lúdica, sem culpar o usuário.
+* **Narrativa:** *"Puxa, a vibração da sala agitou minha luz e não consegui te ouvir bem. Pode repetir com calma para eu sintonizar sua dúvida?"*
+
+---
+
+## 5. Acessibilidade Nativa
+A Lumi utiliza as configurações do dispositivo do aluno (Pinky) de forma transparente:
+* **Tamanho de Fonte e Contraste:** Respeitados automaticamente via CSS relativo.
+* **Velocidade de Fala:** Sincronizada com as preferências de acessibilidade do sistema operacional do aluno.

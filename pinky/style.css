@@ -1,0 +1,60 @@
+body {
+    margin: 0;
+    background: #0a0a0a;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+#lumi-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* O Foco da Lumi */
+#lumi-focus {
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, #ffd700 0%, #ff8c00 70%, transparent 100%);
+    border-radius: 50%;
+    margin: 0 auto;
+    transition: all 0.5s ease;
+    box-shadow: 0 0 20px #ffd700;
+}
+
+/* Animação de IDLE (Pulsação lenta) */
+.lumi-idle {
+    animation: pulse 3s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 20px #ffd700; }
+    50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 40px #ffd700; }
+}
+
+/* Estado de Captura (STT fake) */
+.lumi-captando {
+    animation: vibrate 0.2s infinite;
+    background: radial-gradient(circle, #fff 0%, #ffd700 70%, transparent 100%) !important;
+}
+
+@keyframes vibrate {
+    0% { transform: translate(0); }
+    50% { transform: translate(2px, -2px); }
+    100% { transform: translate(-2px, 2px); }
+}
+
+#chat-container { width: 300px; }
+.input-area { display: flex; gap: 5px; margin-top: 10px; }
+input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
+button { padding: 10px; background: #ffd700; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+/* Estado de Erro (Conexão perdida) */
+#lumi-focus.lumi-off {
+    background: #333 !important;
+    box-shadow: none !important;
+    animation: none !important;
+}
