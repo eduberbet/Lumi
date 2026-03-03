@@ -1,60 +1,155 @@
 body {
-    margin: 0;
-    background: #0a0a0a;
-    color: #fff;
-    font-family: 'Segoe UI', sans-serif;
+    background-color: #1a1a1a;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
     height: 100vh;
+    margin: 0;
+    overflow: hidden;
 }
 
+/* Container Principal */
 #lumi-container {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
-/* O Foco da Lumi */
+/* O Círculo Radiante */
 #lumi-focus {
-    width: 100px;
-    height: 100px;
-    background: radial-gradient(circle, #ffd700 0%, #ff8c00 70%, transparent 100%);
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
-    margin: 0 auto;
-    transition: all 0.5s ease;
-    box-shadow: 0 0 20px #ffd700;
+    margin: 0 auto 20px;
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    background: radial-gradient(circle, #66d9ff 0%, #008fb3 100%);
+    box-shadow: 0 0 30px rgba(0, 143, 179, 0.4);
 }
 
-/* Animação de IDLE (Pulsação lenta) */
+/* --- ESTADOS VISUAIS --- */
+
+/* 1. IDLE (Azul Turquesa) */
 .lumi-idle {
-    animation: pulse 3s infinite ease-in-out;
+    animation: pulse-idle 4s infinite ease-in-out;
+    background: radial-gradient(circle, #66d9ff 0%, #008fb3 100%) !important;
+    box-shadow: 0 0 30px rgba(0, 143, 179, 0.4) !important;
 }
 
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 20px #ffd700; }
-    50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 40px #ffd700; }
+@keyframes pulse-idle {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.03); opacity: 1; }
 }
 
-/* Estado de Captura (STT fake) */
+/* 2. CAPTANDO (Branco Radiante) */
 .lumi-captando {
-    animation: vibrate 0.2s infinite;
-    background: radial-gradient(circle, #fff 0%, #ffd700 70%, transparent 100%) !important;
+    animation: pulse-thinking 0.6s infinite alternate;
+    background: radial-gradient(circle, #ffffff 0%, #00d9ff 100%) !important;
+    box-shadow: 0 0 50px rgba(255, 255, 255, 0.8) !important;
 }
 
-@keyframes vibrate {
-    0% { transform: translate(0); }
-    50% { transform: translate(2px, -2px); }
-    100% { transform: translate(-2px, 2px); }
+@keyframes pulse-thinking {
+    from { transform: scale(1.05); filter: brightness(1.2); }
+    to { transform: scale(1.15); filter: brightness(1.8); }
 }
 
-#chat-container { width: 300px; }
-.input-area { display: flex; gap: 5px; margin-top: 10px; }
-input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
-button { padding: 10px; background: #ffd700; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+/* 3. WAITING (Amarelo Alerta) */
+.lumi-waiting {
+    animation: pulse-waiting 2s infinite ease-in-out;
+    background: radial-gradient(circle, #fff700 0%, #ffaa00 100%) !important;
+    box-shadow: 0 0 40px rgba(255, 170, 0, 0.6) !important;
+}
 
-/* Estado de Erro (Conexão perdida) */
-#lumi-focus.lumi-off {
+@keyframes pulse-waiting {
+    0%, 100% { transform: scale(1); filter: saturate(1); }
+    50% { transform: scale(1.08); filter: saturate(1.5); }
+}
+
+/* 4. DRIBLE (Vermelho Foco) */
+.lumi-drible {
+    animation: pulse-drible 0.4s ease-in-out;
+    background: radial-gradient(circle, #ff6666 0%, #cc0000 100%) !important;
+    box-shadow: 0 0 40px rgba(204, 0, 0, 0.6) !important;
+}
+
+@keyframes pulse-drible {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+/* 5. ACOLHIMENTO (Lilás Empatia) */
+.lumi-acolhimento {
+    animation: pulse-acolhimento 3s infinite ease-in-out;
+    background: radial-gradient(circle, #e6ccff 0%, #b366ff 100%) !important;
+    box-shadow: 0 0 40px rgba(179, 102, 255, 0.5) !important;
+}
+
+@keyframes pulse-acolhimento {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.05); filter: brightness(1.2); }
+}
+
+/* 6. ENTUSIASMO (Verde Sucesso) */
+.lumi-entusiasmo {
+    animation: pulse-entusiasmo 0.5s infinite alternate;
+    background: radial-gradient(circle, #ccffcc 0%, #2ecc71 100%) !important;
+    box-shadow: 0 0 50px rgba(46, 204, 113, 0.7) !important;
+}
+
+@keyframes pulse-entusiasmo {
+    from { transform: scale(1.05); filter: brightness(1.2); }
+    to { transform: scale(1.15); filter: brightness(1.5); }
+}
+
+/* 7. OFF (Cinza) */
+.lumi-off {
     background: #333 !important;
     box-shadow: none !important;
-    animation: none !important;
+    transform: scale(0.9);
 }
+
+/* Interface de Chat */
+#messages {
+    width: 80%;
+    max-width: 500px;
+    height: 120px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dica-lumi {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #00d9ff;
+    width: 100%;
+}
+
+input {
+    padding: 12px 20px;
+    width: 300px;
+    border-radius: 25px;
+    border: 1px solid #444;
+    background: #2a2a2a;
+    color: white;
+    outline: none;
+    transition: border 0.3s;
+}
+
+input:focus { border-color: #00d9ff; }
+
+button {
+    padding: 12px 25px;
+    border-radius: 25px;
+    border: none;
+    background: #008fb3;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+button:hover { background: #00d9ff; }

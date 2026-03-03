@@ -35,6 +35,36 @@ Este é um projeto **Open Source** (Código Aberto). Acreditamos que a tecnologi
 
 ---
 
+## 🚀 Evolução Atual ( Alpha 2.1)
+
+### 🧠 Destaques da Versão:
+
+* **Costura de Alfaiate (Contexto Situacional):**
+    * A Lumi agora diferencia **Humor** (ex: "estou feliz") de **Conquista** (ex: "consegui!").
+    * A celebração de conquista só é disparada se a última interação veio de uma explicação do Cérebro, evitando parabenizações genéricas e robóticas.
+* **Normalização de Sotaque (Filtro "Tudo Bão"):**
+    * Implementação de motor de limpeza de strings (Regex + Normalização NFD).
+    * A Lumi agora entende gírias, abreviações ("pq", "vc") e regionalismos mesmo com acentuação variada.
+* **Psicologia das Cores Dinâmica:**
+    * 🔵 **Azul Turquesa:** Estado *Idle* (Sintonizada e Pronta).
+    * 🟣 **Lilás:** Acolhimento e Empatia (Modo Humanizado).
+    * 🟢 **Verde Vibrante:** Celebração de Conquistas e Alegria.
+    * 🔴 **Vermelho:** Drible (Foco na Aula / Limite de papo furado).
+    * ⚪ **Branco Pulsante:** Processamento (Comunicação com o Cérebro).
+* **Refino de UX:**
+    * Habilitação da tecla **Enter** para envio (fim da irritação de clicar no botão).
+    * Respostas aleatórias para saudações, evitando o efeito "disco riscado".
+
+---
+
+## 🛠️ Arquitetura de Filtros (O Funil)
+
+1.  **Escape Pod (Acolhimento):** Identifica gatilhos de dor severa e redireciona o aluno para o suporte humano (professor), mantendo o tom lilás e empático.
+2.  **Filtro Social:** Controla o limite de interações triviais para garantir que a IA não seja usada apenas para entretenimento, preservando o foco pedagógico.
+3.  **Memória de Curto Prazo:** Janela de 45 segundos para manter o fio da meada em diálogos de acolhimento ou explicação.
+
+---
+
 ## 🛠️ Guia de Implementação (Tutorial)
 
 ### 1. Requisitos do Sistema
@@ -59,31 +89,39 @@ Abra o arquivo index.html em seu navegador.
 
 O status deve exibir "Sintonizada" (conexão via WebSocket estabelecida).
 
-## 🧪 Protocolos de Teste (Fase 1)
+---
 
-Utilize os comandos abaixo no chat para validar a resiliência e a lógica do sistema:
+## 📖 Manual de Interação (Como falar com a Lumi)
 
-* **`teste_latencia`**: Simula um atraso de 15 segundos no Cérebro. 
-    * **Objetivo:** Validar se o Pinky mantém a animação de "captando" e se o Alfaiate visual funciona.
-* **`teste_drible`**: Simula uma tentativa de desviar do assunto pedagógico. 
-    * **Objetivo:** Validar o filtro de mensagens e o alerta de foco.
-* **`ajuda com a aula`**: Solicita informações sobre o conteúdo acadêmico. 
-    * **Objetivo:** Validar a leitura do arquivo físico em `/cerebro/data/aula.txt`.
-* **Teste de Resiliência (Queda)**: Encerre o processo do Python no terminal (Ctrl+C).
-    * **Objetivo:** O Pinky deve mudar para o estado cinza (`lumi-off`) e tentar reconectar automaticamente a cada 3 segundos.
+Use este guia para entender as reações da Lumi e validar se a "personalidade" dela está bem calibrada:
+
+### 1. O Filtro de Regionalismo (A "Normalização")
+* **O que dizer:** "Boa noite, tudo bão?" ou "Eai, blz?"
+* **O que esperar:** A Lumi deve brilhar em **Azul Turquesa** e responder instantaneamente na borda, sem "pensar" (ficar branca). Ela ignora acentos e gírias para te saudar.
+
+### 2. O Acolhimento Lilás (Empatia)
+* **O que dizer:** "Estou muito triste hoje" ou "Meu gato morreu".
+* **O que esperar:** A Lumi assume o estado **Lilás**. Ela oferece conforto e sugere que você converse com seu professor, entendendo que momentos de dor exigem um abraço humano que uma IA não pode dar.
+
+### 3. A Curiosidade de Contexto (O "Por quê?")
+* **O que dizer:** Após ela te acolher no modo Lilás, pergunte: "Mas por que não posso falar com você?".
+* **O que esperar:** Graças à **Memória de Curto Prazo**, ela não envia esse "por que" genérico para o Cérebro. Ela entende que você está questionando a sugestão anterior dela e explica sua natureza de código e luz.
+
+### 4. O Brilho da Vitória (Entusiasmo Situacional)
+* **O que dizer:** "Hoje estou feliz!" ou, após uma dica de aula, "Consegui fazer!".
+* **O que esperar:** Ela assume o estado **Verde**. 
+    * Se for apenas humor, ela compartilha da sua alegria. 
+    * Se houver um contexto de aula recente, ela celebra sua conquista acadêmica específica.
+
+### 5. O Drible Pedagógico (Foco)
+* **O que dizer:** Tentar conversar muito sobre futebol ou outros assuntos fora da aula.
+* **O que esperar:** O estado muda para **Vermelho**. A Lumi fará um "drible", lembrando gentilmente que o objetivo ali é o aprendizado.
 
 ---
 
-## 📚 Índice da Documentação
-1. **[DOC-01] Visão e Escopo:** Identidade e objetivos pedagógicos.
-2. **[DOC-02] Arquitetura Técnica:** Diagrama de rede, portas e fluxo de dados.
-3. **[DOC-03] UX e Diálogo:** Estados de luz, resiliência e **gestão de silêncio**.
-4. **[DOC-04] Segurança:** Protocolos de acesso e Kill Switch.
-5. **[DOC-05] Dicionário de Prompts:** Regras socráticas e **tratativa de papo furado**.
-6. **[DOC-06] Guia de Post-its:** Como o professor sopra dicas no ouvido da IA.
-7. **[DOC-07] Caderno de Erros:** Dashboard de calor e **logs de inatividade**.
-8. **[DOC-08] Expansão:** Inteligência de borda e **interação em dupla**.
-9. **[DOC-09] Roadmap Detalhado:** O plano de voo completo do projeto.
+## 🛠️ Resiliência Técnica
+* **Estado Cinza (`lumi-off`):** Se o servidor Python cair, a Lumi apaga sua luz e tenta reconectar sozinha a cada 3 segundos.
+* **Estado Branco (`lumi-captando`):** Indica que a Lumi enviou sua dúvida para o "Cérebro" e está traduzindo o conhecimento em luz.
 
 ---
 
