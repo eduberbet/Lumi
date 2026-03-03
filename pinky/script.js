@@ -1,149 +1,231 @@
-/**
- * LUMI - Script de Borda (Versão 2.9.5)
- * Lógica: Conquista condicionada ao histórico do Cérebro.
- */
-
 const CONFIG = {
     WS_URL: 'ws://localhost:8000/ws',
-    LIMITES: { inatividade: 10000, social: 3, latenciaMin: 1500, contexto: 45000 },
+    MAX_HISTORICO_DICAS: 10,
+    TEMPOS: {
+        inatividade: 15000,
+        respiro: 2500,
+        abandono: 10000,
+        social: 3,
+        contexto: 45000,
+        typing_speed: 30 
+    },
     GATILHOS: {
-        dor: ["triste", "sozinho", "chorar", "medo", "ruim", "morreu", "machucou", "odeio", "mal", "gato", "perdi"],
+        dor: ["triste", "sozinho", "chorar", "medo", "ruim", "morreu", "machucou", "odeio", "mal", "perdi", "gato", "cachorro"],
         vitoria: ["consegui", "entendi", "venci", "acertei", "terminei", "finalizei"],
-        alegria: ["feliz", "legal", "amei", "uhu", "eba", "divertido", "top", "maravilha", "bem"],
+        alegria: ["feliz", "legal", "amei", "uhu", "eba", "divertido", "top", "maravilha", "bem", "nasceu"],
         saudacoes: ["oi", "ola", "bom dia", "boa tarde", "boa noite", "tudo bem", "tudo bom", "tudo bao", "eai"]
     }
 };
 
 let socket;
-let timerInatividade;
+let bufferMensagens = [];
+let historicoDicas = []; 
+let ultimaMensagemEnviada = ""; 
+let jaTentouReenviar = false;
+let recognition;
+let estaGravando = false;
+
+let timerEnvioCerebro, timerAbandono, timerInatividade;
 let contadorPapoSocial = 0;
 let momentoEnvio = 0;
-// contextoUltimaInteracao.tipo pode ser: 'idle', 'aula', 'acolhimento', 'social'
-let contextoUltimaInteracao = { tipo: "idle", timestamp: 0 }; 
+let contextoUltimaInteracao = { tipo: "idle", timestamp: 0 };
 
 const UI = {
     focus: document.getElementById('lumi-focus'),
     status: document.getElementById('lumi-status'),
     input: document.getElementById('user-input'),
     messages: document.getElementById('messages'),
-    sendBtn: document.getElementById('send-btn'),
-    setEstado(classe, texto, htmlMsg = null) {
-        if (!this.focus) return;
-        this.focus.className = classe;
+    sendBtn: document.getElementById('send-btn'), // Botão de clique/Enter
+    sttBtn: document.getElementById('stt-btn'),   // Botão Irradiar (Voz)
+    
+    setEstado(classe, texto) {
+        if (this.focus) this.focus.className = classe;
         if (texto) this.status.innerText = texto;
-        if (htmlMsg) this.messages.innerHTML = htmlMsg;
+    },
+
+    escrever(texto, classeCss = "dica-lumi") {
+        this.messages.innerHTML = `<div class="${classeCss}"><strong>LUMI:</strong> <span id="typing"></span></div>`;
+        const span = document.getElementById('typing');
+        let i = 0;
+        const intervalo = setInterval(() => {
+            if (i < texto.length) {
+                span.textContent += texto[i];
+                i++;
+            } else {
+                clearInterval(intervalo);
+                this.falar(texto);
+            }
+        }, CONFIG.TEMPOS.typing_speed);
+    },
+
+    falar(texto) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(texto);
+            utterance.lang = 'pt-BR';
+            utterance.rate = 1.1;
+            window.speechSynthesis.speak(utterance);
+        }
     }
 };
 
-function normalizar(txt) {
-    return txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-}
+// --- CONFIGURAÇÃO DO RECONHECIMENTO DE VOZ (STT) ---
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
-function conectar() {
-    socket = new WebSocket(CONFIG.WS_URL);
-    socket.onopen = () => { UI.setEstado('lumi-idle', "Sintonizada"); resetarTemporizador(); };
-    socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        const espera = Math.max(0, CONFIG.LIMITES.latenciaMin - (Date.now() - momentoEnvio));
-        setTimeout(() => {
-            processarRespostaCerebro(data);
-            // MARCA QUE A ÚLTIMA INTERAÇÃO VEIO DO CÉREBRO (CONTEÚDO)
-            contextoUltimaInteracao = { tipo: "aula", timestamp: Date.now() };
-        }, espera);
+    recognition.onresult = (event) => {
+        const textoTranscrito = event.results[0][0].transcript;
+        UI.input.value = textoTranscrito;
+        console.log("[LUMI] Irradiação captada:", textoTranscrito);
+        processarEntrada(); // Envia automaticamente ao transcrever
     };
-    socket.onclose = () => { UI.setEstado('lumi-off', "Sintonizando..."); setTimeout(conectar, 3000); };
+
+    recognition.onend = () => {
+        estaGravando = false;
+        if (UI.status.innerText === "Irradiando...") UI.setEstado('lumi-idle', "Em sintonia");
+    };
 }
 
-function analisarBorda(textoOriginal) {
-    const input = normalizar(textoOriginal);
+// --- MOTOR DE FLUXO ---
+
+function processarEntrada() {
+    const texto = UI.input.value.trim();
+    if (!texto) return;
+
+    clearTimeout(timerAbandono);
+    clearTimeout(timerEnvioCerebro);
+
+    bufferMensagens.push(texto);
+    UI.input.value = '';
+    UI.setEstado('lumi-captando', "Em escuta...");
+
+    timerEnvioCerebro = setTimeout(dispararMensagem, CONFIG.TEMPOS.respiro);
+}
+
+function dispararMensagem(isRetry = false) {
+    if (bufferMensagens.length === 0 && !isRetry) return;
+    const mensagem = isRetry ? ultimaMensagemEnviada : bufferMensagens.join(" ");
+    if (!isRetry) { ultimaMensagemEnviada = mensagem; bufferMensagens = []; }
+    if (analisarBorda(mensagem)) return;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        momentoEnvio = Date.now();
+        UI.setEstado('lumi-captando', isRetry ? "Re-sintonizando..." : "Processando...");
+        socket.send(JSON.stringify({ texto: mensagem, retry: isRetry }));
+    }
+}
+
+// --- ANÁLISE DE BORDA (NEUTRA) ---
+
+function analisarBorda(mensagem) {
+    const input = normalizar(mensagem);
     const agora = Date.now();
-    const emJanela = (agora - contextoUltimaInteracao.timestamp < CONFIG.LIMITES.contexto);
+    const emJanela = (agora - contextoUltimaInteracao.timestamp < CONFIG.TEMPOS.contexto);
 
-    // 1. GATILHOS BÁSICOS
-    const temDor = CONFIG.GATILHOS.dor.some(p => input.includes(p));
-    const temVitoria = CONFIG.GATILHOS.vitoria.some(p => input.includes(p));
-    const temAlegria = CONFIG.GATILHOS.alegria.some(p => input.includes(p));
-    const ehSaudacao = CONFIG.GATILHOS.saudacoes.some(s => input.includes(s));
-    const ehPq = (input.includes("pq") || input.includes("porque"));
+    const gatilhos = {
+        temDor: CONFIG.GATILHOS.dor.some(p => input.includes(p)),
+        temVitoria: CONFIG.GATILHOS.vitoria.some(p => input.includes(p)),
+        temAlegria: CONFIG.GATILHOS.alegria.some(p => input.includes(p)),
+        ehSaudacao: CONFIG.GATILHOS.saudacoes.some(s => input.includes(s)),
+        ehPq: (input.includes("pq") || input.includes("porque") || input.includes("por que"))
+    };
 
-    // 2. LOGICA DE CONTEXTO (POR QUE?)
-    if (ehPq && emJanela) {
-        if (contextoUltimaInteracao.tipo === "acolhimento") {
-            UI.setEstado('lumi-acolhimento', "Lumi explica...", `<div style="color: #d199ff; font-style: italic;">Porque eu me importo com você, mas sou apenas código. Seu professor tem o acolhimento humano que você precisa agora.</div>`);
-            return true;
-        }
-    }
-
-    // 3. VITÓRIA OU ALEGRIA? (O SEU PONTO!)
-    if (temVitoria || temAlegria) {
-        // Se houve um input do cérebro recentemente E o aluno disse que "conseguiu" ou está "feliz"
-        if (emJanela && contextoUltimaInteracao.tipo === "aula" && temVitoria) {
-            UI.setEstado('lumi-entusiasmo', "Lumi celebra!", `<div style="color: #2ecc71; font-weight: bold;">Uhu! Parabéns por ter conseguido aplicar a dica! Você está brilhando!</div>`);
-        } else {
-            // Caso contrário, é apenas um estado de humor
-            UI.setEstado('lumi-entusiasmo', "Lumi brilha!", `<div style="color: #2ecc71; font-weight: bold;">Que energia maravilhosa! Adoro te ver assim, vamos manter esse brilho na aula?</div>`);
-        }
-        contextoUltimaInteracao = { tipo: "social", timestamp: agora };
-        agendarReset(5000);
+    if (gatilhos.ehPq && emJanela && contextoUltimaInteracao.tipo === "acolhimento") {
+        UI.setEstado('lumi-acolhimento', "Explicação");
+        UI.escrever("Existe o desejo de ajudar, mas este é um sistema de código. O apoio humano do seu professor ou professora é o caminho ideal agora.", "msg-acolhimento");
         return true;
     }
-
-    // 4. ACOLHIMENTO
-    if (temDor) {
-        UI.setEstado('lumi-acolhimento', "Lumi te ouve...", `<div style="color: #d199ff; font-style: italic;">Sinto muito. Lembre-se que seu professor(a) está aqui por você.</div>`);
+    if (gatilhos.temDor) {
+        UI.setEstado('lumi-acolhimento', "Acolhendo");
+        UI.escrever("Sinto muito por este momento. Saiba que o seu professor ou professora está por perto para te ouvir.", "msg-acolhimento");
         contextoUltimaInteracao = { tipo: "acolhimento", timestamp: agora };
-        agendarReset(7000);
         return true;
     }
-
-    // 5. SAUDAÇÕES
-    if (ehSaudacao) {
+    if (gatilhos.ehSaudacao) {
         contadorPapoSocial++;
-        if (contadorPapoSocial > CONFIG.LIMITES.social) {
-            UI.setEstado('lumi-drible', "Foco na aula!", `<div style="color: #ff6666;">Vamos focar no conteúdo?</div>`);
-            agendarReset(3000);
+        if (contadorPapoSocial > CONFIG.TEMPOS.social) {
+            UI.setEstado('lumi-drible', "Foco no tema");
+            UI.escrever("Vamos focar no que estamos aprendendo agora?", "msg-drible");
         } else {
-            UI.setEstado('lumi-idle', "Sintonizada", `<div class="dica-lumi">Olá! Tudo pronto por aqui. O que vamos descobrir?</div>`);
-            resetarTemporizador();
+            UI.setEstado('lumi-idle', "Em sintonia");
+            UI.escrever("Olá! O sistema está pronto. O que vamos descobrir em conjunto?");
         }
         return true;
     }
-
     return false;
 }
 
-function enviarMensagem() {
-    const text = UI.input.value;
-    if (!text || (socket && socket.readyState !== WebSocket.OPEN)) return;
-    if (analisarBorda(text)) { UI.input.value = ''; return; }
-    momentoEnvio = Date.now();
-    UI.setEstado('lumi-captando', "Processando...");
-    socket.send(JSON.stringify({ texto: text }));
-    UI.input.value = '';
+// --- COMUNICAÇÃO ---
+
+function conectar() {
+    socket = new WebSocket(CONFIG.WS_URL);
+    socket.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (!data.corpo_da_dica) throw new Error("Dado incompleto");
+            jaTentouReenviar = false;
+            historicoDicas.push(data.corpo_da_dica);
+            if (historicoDicas.length > CONFIG.MAX_HISTORICO_DICAS) historicoDicas.shift();
+            UI.setEstado('lumi-idle', "Conectado");
+            UI.escrever(data.corpo_da_dica);
+            contextoUltimaInteracao = { tipo: "aula", timestamp: Date.now() };
+        } catch (err) { tentarRecuperar(); }
+    };
+    socket.onclose = () => { UI.setEstado('lumi-off', "Desconectado"); setTimeout(conectar, 3000); };
+    socket.onopen = () => { UI.setEstado('lumi-idle', "Em sintonia"); };
 }
 
-function processarRespostaCerebro(data) {
-    if (data.status_progresso === "DRIBLE") {
-        UI.setEstado('lumi-drible', "Foco!", `<div style="color: #ff6666; font-weight: bold;">${data.corpo_da_dica}</div>`);
-        agendarReset(2500);
+function tentarRecuperar() {
+    if (!jaTentouReenviar) {
+        jaTentouReenviar = true;
+        UI.setEstado('lumi-drible', "Re-sintonizando");
+        setTimeout(() => dispararMensagem(true), 1500);
     } else {
-        UI.setEstado('lumi-idle', "Sintonizada", `<div class="dica-lumi"><strong>LUMI:</strong> ${data.corpo_da_dica}</div>`);
-        resetarTemporizador();
+        UI.escrever("Houve uma pequena falha de sinal. Pode repetir a última frase?");
+        jaTentouReenviar = false;
     }
 }
 
-function resetarTemporizador() {
-    clearTimeout(timerInatividade);
-    timerInatividade = setTimeout(() => {
-        if (socket && socket.readyState === WebSocket.OPEN) UI.setEstado('lumi-waiting', "Aguardando...");
-    }, CONFIG.LIMITES.inatividade);
+// --- EVENTOS DE INTERAÇÃO ---
+
+// Botão Tradicional (Clique)
+UI.sendBtn.onclick = processarEntrada;
+
+// Botão Irradiar (Segurar para falar)
+if (UI.sttBtn) {
+    UI.sttBtn.onmousedown = () => {
+        if (recognition && !estaGravando) {
+            estaGravando = true;
+            window.speechSynthesis.cancel();
+            UI.input.value = "";
+            UI.setEstado('lumi-captando', "Irradiando..."); // Estado especial de escuta
+            recognition.start();
+        }
+    };
+    UI.sttBtn.onmouseup = () => { if (recognition && estaGravando) recognition.stop(); };
+    UI.sttBtn.onmouseleave = () => { if (recognition && estaGravando) recognition.stop(); }; // Segurança se sair do botão
+    // Touch
+    UI.sttBtn.ontouchstart = (e) => { e.preventDefault(); UI.sttBtn.onmousedown(); };
+    UI.sttBtn.ontouchend = (e) => { e.preventDefault(); UI.sttBtn.onmouseup(); };
 }
 
-function agendarReset(ms) {
-    clearTimeout(timerInatividade);
-    setTimeout(() => { UI.setEstado('lumi-idle', "Sintonizada"); resetarTemporizador(); }, ms);
-}
+UI.input.oninput = () => {
+    clearTimeout(timerEnvioCerebro);
+    clearTimeout(timerAbandono);
+    timerAbandono = setTimeout(() => {
+        if (UI.input.value.trim() !== "") {
+            UI.input.value = '';
+            if (bufferMensagens.length > 0) dispararMensagem();
+            else UI.setEstado('lumi-idle', "Em sintonia");
+        }
+    }, CONFIG.TEMPOS.abandono);
+};
 
-UI.sendBtn.onclick = enviarMensagem;
-UI.input.onkeydown = (e) => { if (e.key === "Enter") enviarMensagem(); };
+UI.input.onkeydown = (e) => { if (e.key === "Enter") processarEntrada(); };
+
+function normalizar(txt) { return txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); }
+
 conectar();
