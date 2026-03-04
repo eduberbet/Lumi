@@ -27,41 +27,43 @@ Este é um projeto **Open Source** (Código Aberto). Acreditamos que a tecnologi
 | :--- | :--- | :--- | :--- |
 | Fase 0 | Cérebro Simulado | ✅ Concluído | Criação do servidor de testes (Mock) e comandos de depuração (Latência, Kill Switch, Drible). |
 | Fase 1 | Alpha (Conexão) | ✅ Concluído | Estabilização do WebSocket e JSON base para nomes simples/duplas. |
-| **Fase 2** | **Alpha UX (Borda)** | 🔵 **ATUAL** | Interface do Círculo Radiante, Filtros de Papo Furado e Gestão de Silêncio. |
-| Fase 3 | Lumi Pocket | ⚪ Planejado | Versão estática para GitHub Sites (Vitrine de demonstração). |
+| Fase 2 | Alpha UX (Borda) | ✅ Concluído | Onboarding de Aluno, Filtros de Papo Furado e Blindagem de Contexto Emocional. |
+| **Fase 3** | **Lumi Pocket** | 🔵 **ATUAL** | Versão estática para GitHub Sites (Vitrine de demonstração). |
 | Fase 4 | Beta (O Despertar) | ⚪ Planejado | Integração com LLM real e Validação de Sucesso com argumento. |
 | Fase 5 | Beta RAG (Grupo) | ⚪ Planejado | Modo Dupla Ativo e consulta profunda a PDFs e Post-its. |
 | Fase 6 | Lumi 1.0 (Mestre) | ⚪ Planejado | Caderno de Erros funcional e Gestão de Fila de Hardware. |
 
+> 🌐 **Lumi em Tempo Real:** Quer ver a Lumi Pocket em ação? Acesse a versão de demonstração em [eduberbet.github.io](https://eduberbet.github.io).
+
 ---
 
-## 🚀 Evolução Atual ( Alpha 2.1)
+## 🚀 Evolução Atual (Alpha 5.7 - Ironclad Edition)
 
 ### 🧠 Destaques da Versão:
 
-* **Costura de Alfaiate (Contexto Situacional):**
-    * A Lumi agora diferencia **Humor** (ex: "estou feliz") de **Conquista** (ex: "consegui!").
-    * A celebração de conquista só é disparada se a última interação veio de uma explicação do Cérebro, evitando parabenizações genéricas e robóticas.
-* **Normalização de Sotaque (Filtro "Tudo Bão"):**
-    * Implementação de motor de limpeza de strings (Regex + Normalização NFD).
-    * A Lumi agora entende gírias, abreviações ("pq", "vc") e regionalismos mesmo com acentuação variada.
-* **Psicologia das Cores Dinâmica:**
+* **O Ritual de Batismo (Onboarding de Identidade):**
+    * A Lumi não é mais uma estranha; ela agora pergunta e memoriza o nome do aluno no primeiro contato.
+    * **Filtro Anti-Troll:** Sistema de validação que barra nomes ofensivos ou robóticos 
+* **Blindagem Emocional (O Muro de Borda):**
+    * Evolução do contexto de acolhimento: a Lumi agora sustenta diálogos sobre sentimentos por até **90 segundos**, mesmo que o aluno tente mudar de assunto com um "Oi" no meio.
+    * O gatilho "Por quê?" agora é inteligente; se você estiver triste, ela sabe que a explicação deve ser humana (Professor) e não técnica (Cérebro).
+* **Ouvido Absoluto (Resiliência de Áudio):**
+    * **Teste do Bocejo:** O motor de limpeza agora é tão refinado que ignora ruídos não-verbais e silêncios prolongados com louvor.
+    * Correção definitiva do "Loop Visual": o botão lilás e o estado "Irradiando" agora morrem no milissegundo em que você solta o dedo.
+* **Psicologia das Cores & Estados:**
     * 🔵 **Azul Turquesa:** Estado *Idle* (Sintonizada e Pronta).
-    * 🟣 **Lilás:** Acolhimento e Empatia (Modo Humanizado).
-    * 🟢 **Verde Vibrante:** Celebração de Conquistas e Alegria.
-    * 🔴 **Vermelho:** Drible (Foco na Aula / Limite de papo furado).
-    * ⚪ **Branco Pulsante:** Processamento (Comunicação com o Cérebro).
-* **Refino de UX:**
-    * Habilitação da tecla **Enter** para envio (fim da irritação de clicar no botão).
-    * Respostas aleatórias para saudações, evitando o efeito "disco riscado".
+    * 🟣 **Lilás:** Acolhimento, Empatia e Captura de Voz.
+    * 🔴 **Vermelho:** Drible (Foco na Aula) ou **Luz Fraca** (Offline).
+    * ⚪ **Branco Pulsante:** Irradiando (Escutando o Aluno).
 
 ---
 
-## 🛠️ Arquitetura de Filtros (O Funil)
+## 🛠️ Arquitetura de Filtros (O Funil de Borda)
 
-1.  **Escape Pod (Acolhimento):** Identifica gatilhos de dor severa e redireciona o aluno para o suporte humano (professor), mantendo o tom lilás e empático.
-2.  **Filtro Social:** Controla o limite de interações triviais para garantir que a IA não seja usada apenas para entretenimento, preservando o foco pedagógico.
-3.  **Memória de Curto Prazo:** Janela de 45 segundos para manter o fio da meada em diálogos de acolhimento ou explicação.
+1. **Protocolo de Batismo:** Bloqueio pedagógico inicial; nenhuma dúvida acadêmica é enviada ao Cérebro antes da apresentação formal do aluno.
+2. **Escape Pod (Acolhimento):** Identifica gatilhos de dor severa via Regex Neural e redireciona o aluno para o suporte humano, mantendo a mensagem de apoio visível na tela mesmo durante interações sociais.
+3. **Filtro de Ruído:** Normalização agressiva de strings (NFD + Regex) que limpa interrogações, gírias e bocejos antes de decidir se deve incomodar o servidor.
+4. **Memória de Curto Prazo:** Janela de **90 segundos** (dobrada!) para garantir que o fio da meada emocional não se perca em "papo furado".
 
 ---
 

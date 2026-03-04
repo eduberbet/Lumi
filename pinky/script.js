@@ -1,231 +1,264 @@
-const CONFIG = {
-    WS_URL: 'ws://localhost:8000/ws',
-    MAX_HISTORICO_DICAS: 10,
-    TEMPOS: {
-        inatividade: 15000,
-        respiro: 2500,
-        abandono: 10000,
-        social: 3,
-        contexto: 45000,
-        typing_speed: 30 
-    },
-    GATILHOS: {
-        dor: ["triste", "sozinho", "chorar", "medo", "ruim", "morreu", "machucou", "odeio", "mal", "perdi", "gato", "cachorro"],
-        vitoria: ["consegui", "entendi", "venci", "acertei", "terminei", "finalizei"],
-        alegria: ["feliz", "legal", "amei", "uhu", "eba", "divertido", "top", "maravilha", "bem", "nasceu"],
-        saudacoes: ["oi", "ola", "bom dia", "boa tarde", "boa noite", "tudo bem", "tudo bom", "tudo bao", "eai"]
-    }
-};
+/**
+ * LUMI 5.7 - ANTI-TROLL & NEURAL
+ * Correção definitiva de detecção de 'Por que' e validação de nome.
+ */
 
-let socket;
-let bufferMensagens = [];
-let historicoDicas = []; 
-let ultimaMensagemEnviada = ""; 
-let jaTentouReenviar = false;
-let recognition;
-let estaGravando = false;
-
-let timerEnvioCerebro, timerAbandono, timerInatividade;
-let contadorPapoSocial = 0;
-let momentoEnvio = 0;
-let contextoUltimaInteracao = { tipo: "idle", timestamp: 0 };
-
-const UI = {
-    focus: document.getElementById('lumi-focus'),
-    status: document.getElementById('lumi-status'),
-    input: document.getElementById('user-input'),
-    messages: document.getElementById('messages'),
-    sendBtn: document.getElementById('send-btn'), // Botão de clique/Enter
-    sttBtn: document.getElementById('stt-btn'),   // Botão Irradiar (Voz)
-    
-    setEstado(classe, texto) {
-        if (this.focus) this.focus.className = classe;
-        if (texto) this.status.innerText = texto;
-    },
-
-    escrever(texto, classeCss = "dica-lumi") {
-        this.messages.innerHTML = `<div class="${classeCss}"><strong>LUMI:</strong> <span id="typing"></span></div>`;
-        const span = document.getElementById('typing');
-        let i = 0;
-        const intervalo = setInterval(() => {
-            if (i < texto.length) {
-                span.textContent += texto[i];
-                i++;
-            } else {
-                clearInterval(intervalo);
-                this.falar(texto);
-            }
-        }, CONFIG.TEMPOS.typing_speed);
-    },
-
-    falar(texto) {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(texto);
-            utterance.lang = 'pt-BR';
-            utterance.rate = 1.1;
-            window.speechSynthesis.speak(utterance);
+const LUMI_ENGINE = {
+    state: {
+        userName: localStorage.getItem('lumi_user_name') || null,
+        isRecording: false,
+        socialCount: 0,
+        lastContext: { type: 'idle', time: 0 },
+        history: [],
+        config: {
+            get typingSpeed() { return parseInt(localStorage.getItem('lumi_typing_speed')) || 30 },
+            get voiceRate() { return parseFloat(localStorage.getItem('lumi_voice_rate')) || 1.0 }
         }
+    },
+
+    timers: { envio: null, stt: null, escrita: null },
+
+    ui: {
+        focus: document.getElementById('lumi-focus'),
+        status: document.getElementById('lumi-status'),
+        input: document.getElementById('user-input'),
+        messages: document.getElementById('messages'),
+        sttBtn: document.getElementById('stt-btn'),
+
+        updateStatus(mode, text) {
+            this.focus.className = `lumi-${mode}`;
+            if (text) this.status.innerText = text;
+        },
+
+        toggleControls(speaking) {
+            document.getElementById('group-normal').style.display = speaking ? 'none' : 'flex';
+            document.getElementById('group-speed').style.display = speaking ? 'flex' : 'none';
+        },
+
+        clearTemps() {
+            const agora = Date.now();
+            if (LUMI_ENGINE.state.lastContext.type !== 'acolhimento' || (agora - LUMI_ENGINE.state.lastContext.time > 90000)) {
+                document.querySelectorAll('.msg-temp').forEach(m => m.remove());
+            }
+        }
+    },
+
+    render(texto, isTemp = false) {
+        clearInterval(this.timers.escrita);
+        window.speechSynthesis.cancel();
+        if (!isTemp) this.ui.clearTemps();
+
+        const div = document.createElement('div');
+        div.className = isTemp ? 'dica-lumi msg-temp' : 'dica-lumi';
+        div.innerHTML = `<strong>LUMI:</strong> <span class="txt"></span>`;
+        this.ui.messages.appendChild(div);
+        
+        const span = div.querySelector('.txt');
+        let i = 0;
+        this.ui.toggleControls(true);
+
+        this.timers.escrita = setInterval(() => {
+            if (i < texto.length) {
+                span.textContent += texto[i++];
+                this.ui.messages.scrollTop = this.ui.messages.scrollHeight;
+            } else {
+                clearInterval(this.timers.escrita);
+                this.speak(texto);
+            }
+        }, this.state.config.typingSpeed);
+
+        while (this.ui.messages.children.length > 15) this.ui.messages.removeChild(this.ui.messages.firstChild);
+    },
+
+    speak(texto) {
+        if (!('speechSynthesis' in window)) return this.ui.toggleControls(false);
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(texto);
+        u.lang = 'pt-BR';
+        u.rate = this.state.config.voiceRate;
+        u.onend = () => {
+            this.ui.toggleControls(false);
+            if (socket?.readyState === 1) this.ui.updateStatus('idle', 'Em sintonia');
+        };
+        window.speechSynthesis.speak(u);
+    },
+
+    validarNome(nome) {
+        const blacklist = ["lixo", "burro", "idiota", "teste", "nada", "lumi", "megaboga", "admin"];
+        const limpo = nome.trim().toLowerCase();
+        // Regex para validar se parece um nome (sem números, sem caracteres especiais, max 2 palavras)
+        const apenasLetras = /^[a-zA-ZÀ-ÿ\s]+$/.test(limpo);
+        const palavras = limpo.split(/\s+/);
+        
+        if (limpo.length < 2 || limpo.length > 20 || !apenasLetras || blacklist.includes(limpo) || palavras.length > 3) {
+            return false;
+        }
+        return true;
+    },
+
+    analyze(msg) {
+        // Limpeza agressiva para análise
+        const raw = msg.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[?.!,;]/g, "").trim();
+        const agora = Date.now();
+        const offline = !socket || socket.readyState !== 1;
+
+        if (!raw) { this.ui.updateStatus('idle', 'Em sintonia'); return true; }
+
+        // 1. BLOQUEIO DE ONBOARDING
+        if (!this.state.userName) {
+            if (this.validarNome(msg)) {
+                const nomeFinal = msg.trim().split(' ')[0].charAt(0).toUpperCase() + msg.trim().split(' ')[0].slice(1).toLowerCase();
+                this.state.userName = nomeFinal;
+                localStorage.setItem('lumi_user_name', nomeFinal);
+                this.render(`Prazer em te conhecer, ${nomeFinal}! Estou pronta para ajudar você com a aula de hoje.`);
+            } else {
+                this.render("Como sou uma inteligência para a escola, preciso saber seu primeiro nome primeiro. Como se chama?");
+            }
+            return true;
+        }
+
+        // 2. DETECÇÃO DE "POR QUE" (Neural-style Regex)
+        // Pega: "por que", "porque", "pq", "por que?" em qualquer lugar da frase
+        const regexPorQue = /\bpq\b|\bporque\b|\bpor\s+que\b/i;
+        const perguntouPorQue = regexPorQue.test(raw);
+        const estaNoContextoAcolhimento = (this.state.lastContext.type === "acolhimento" && (agora - this.state.lastContext.time < 90000));
+
+        if (perguntouPorQue && estaNoContextoAcolhimento) {
+            this.render(`Como eu disse, ${this.state.userName}, eu sou apenas um programa feito para ensinar. Nesses momentos de tristeza, o seu professor é quem tem o coração para te acolher de verdade.`, true);
+            return true;
+        }
+
+        // 3. GATILHOS DE DOR
+        if (["triste", "medo", "morreu", "mal", "ruim", "perdi", "sozinho", "chorar"].some(p => raw.includes(p))) {
+            this.state.lastContext = { type: 'acolhimento', time: agora };
+            this.ui.updateStatus('acolhimento', 'Acolhendo');
+            this.render(`Sinto muito por isso. Saiba que seu professor está aqui na sala e você pode contar com ele agora.`, true);
+            return true;
+        }
+
+        // 4. SOCIAL
+        if (["oi", "ola", "tudo bem", "bom dia", "boa tarde"].some(s => raw.includes(s))) {
+            if (offline) {
+                this.ui.updateStatus('off', 'Luz fraca');
+                this.render("Minha luz está fraca sem conexão. Avise o professor!");
+            } else {
+                this.state.socialCount++;
+                if (this.state.socialCount > 2) {
+                    this.state.socialCount = 0;
+                    this.ui.updateStatus('drible', 'Foco');
+                    this.render(`É muito bom conversar com você, ${this.state.userName}, mas vamos focar no desafio da aula?`, true);
+                } else {
+                    const frases = [`Olá, ${this.state.userName}!`, "Oi! Vamos aprender?", "Estou sintonizada!", "Em que posso ajudar?"];
+                    this.render(frases[Math.floor(Math.random() * frases.length)], true);
+                }
+            }
+            return true;
+        }
+
+        return false;
     }
 };
 
-// --- CONFIGURAÇÃO DO RECONHECIMENTO DE VOZ (STT) ---
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
+// --- COMUNICAÇÃO ---
+let socket, bufferMensagens = [];
+function conectar() {
+    socket = new WebSocket('ws://localhost:8000/ws');
+    socket.onopen = () => LUMI_ENGINE.ui.updateStatus('idle', 'Em sintonia');
+    socket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        LUMI_ENGINE.state.history.push(data.corpo_da_dica);
+        if (LUMI_ENGINE.state.history.length > 10) LUMI_ENGINE.state.history.shift();
+        
+        // Se recebeu resposta do servidor, o foco voltou a ser acadêmico
+        LUMI_ENGINE.state.lastContext.type = 'idle';
+        LUMI_ENGINE.render(data.corpo_da_dica, false);
+    };
+    socket.onclose = () => {
+        LUMI_ENGINE.ui.updateStatus('off', 'Desconectado');
+        setTimeout(conectar, 3000);
+    };
+}
+
+function enviarMensagem() {
+    const texto = LUMI_ENGINE.ui.input.value.trim();
+    if (!texto) { LUMI_ENGINE.ui.updateStatus('idle', 'Em sintonia'); return; }
+    
+    clearTimeout(LUMI_ENGINE.timers.envio);
+    bufferMensagens.push(texto);
+    LUMI_ENGINE.ui.input.value = '';
+    LUMI_ENGINE.ui.updateStatus('captando', 'Escutando...');
+
+    LUMI_ENGINE.timers.envio = setTimeout(() => {
+        const msg = bufferMensagens.join(" ");
+        bufferMensagens = [];
+        if (!LUMI_ENGINE.analyze(msg)) {
+            if (socket?.readyState === 1) {
+                socket.send(JSON.stringify({ texto: msg, historico: LUMI_ENGINE.state.history }));
+            } else {
+                LUMI_ENGINE.ui.updateStatus('drible', 'Sem sinal');
+                LUMI_ENGINE.render("Minha luz caiu... Chame o professor.", true);
+            }
+        }
+    }, 2000);
+}
+
+document.getElementById('send-btn').onclick = enviarMensagem;
+LUMI_ENGINE.ui.input.onkeydown = (e) => { if (e.key === 'Enter') enviarMensagem(); };
+
+// --- CONTROLES DE VELOCIDADE ---
+function ajustarVelocidade(deltaRate, deltaTyping) {
+    const newRate = Math.min(2.0, Math.max(0.5, (LUMI_ENGINE.state.config.voiceRate + deltaRate).toFixed(1)));
+    const newTyping = Math.min(100, Math.max(5, LUMI_ENGINE.state.config.typingSpeed + deltaTyping));
+    localStorage.setItem('lumi_voice_rate', newRate);
+    localStorage.setItem('lumi_typing_speed', newTyping);
+    const ultimaDica = document.querySelector('.dica-lumi:last-child .txt')?.textContent;
+    if (ultimaDica) LUMI_ENGINE.speak(ultimaDica);
+}
+
+document.getElementById('slow-btn').onclick = () => ajustarVelocidade(-0.2, 15);
+document.getElementById('fast-btn').onclick = () => ajustarVelocidade(0.2, -10);
+
+// --- MOTOR DE VOZ (STT) ---
+if ('webkitSpeechRecognition' in window) {
+    const recognition = new webkitSpeechRecognition();
     recognition.lang = 'pt-BR';
     recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onresult = (event) => {
-        const textoTranscrito = event.results[0][0].transcript;
-        UI.input.value = textoTranscrito;
-        console.log("[LUMI] Irradiação captada:", textoTranscrito);
-        processarEntrada(); // Envia automaticamente ao transcrever
+    
+    recognition.onresult = (e) => { 
+        const result = e.results[0][0].transcript;
+        if (result) { LUMI_ENGINE.ui.input.value = result; enviarMensagem(); }
     };
 
     recognition.onend = () => {
-        estaGravando = false;
-        if (UI.status.innerText === "Irradiando...") UI.setEstado('lumi-idle', "Em sintonia");
+        LUMI_ENGINE.state.isRecording = false;
+        LUMI_ENGINE.ui.sttBtn.classList.remove('btn-active');
+        if (LUMI_ENGINE.ui.status.innerText === "Irradiando...") LUMI_ENGINE.ui.updateStatus('idle', 'Em sintonia');
+    };
+
+    recognition.onerror = () => { recognition.stop(); LUMI_ENGINE.ui.updateStatus('idle', 'Em sintonia'); };
+
+    LUMI_ENGINE.ui.sttBtn.onmousedown = () => {
+        if (LUMI_ENGINE.state.isRecording) try { recognition.stop(); } catch(e) {}
+        window.speechSynthesis.cancel();
+        LUMI_ENGINE.state.isRecording = true;
+        LUMI_ENGINE.ui.sttBtn.classList.add('btn-active');
+        LUMI_ENGINE.ui.updateStatus('captando', 'Irradiando...');
+        try { recognition.start(); } catch(e) {}
+        clearTimeout(LUMI_ENGINE.timers.stt);
+        LUMI_ENGINE.timers.stt = setTimeout(() => {
+            if (LUMI_ENGINE.state.isRecording) { recognition.stop(); LUMI_ENGINE.ui.updateStatus('idle', 'Sintonizada'); }
+        }, 6000);
+    };
+
+    LUMI_ENGINE.ui.sttBtn.onmouseup = () => { 
+        setTimeout(() => { if (LUMI_ENGINE.state.isRecording) recognition.stop(); }, 500);
     };
 }
 
-// --- MOTOR DE FLUXO ---
-
-function processarEntrada() {
-    const texto = UI.input.value.trim();
-    if (!texto) return;
-
-    clearTimeout(timerAbandono);
-    clearTimeout(timerEnvioCerebro);
-
-    bufferMensagens.push(texto);
-    UI.input.value = '';
-    UI.setEstado('lumi-captando', "Em escuta...");
-
-    timerEnvioCerebro = setTimeout(dispararMensagem, CONFIG.TEMPOS.respiro);
-}
-
-function dispararMensagem(isRetry = false) {
-    if (bufferMensagens.length === 0 && !isRetry) return;
-    const mensagem = isRetry ? ultimaMensagemEnviada : bufferMensagens.join(" ");
-    if (!isRetry) { ultimaMensagemEnviada = mensagem; bufferMensagens = []; }
-    if (analisarBorda(mensagem)) return;
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        momentoEnvio = Date.now();
-        UI.setEstado('lumi-captando', isRetry ? "Re-sintonizando..." : "Processando...");
-        socket.send(JSON.stringify({ texto: mensagem, retry: isRetry }));
-    }
-}
-
-// --- ANÁLISE DE BORDA (NEUTRA) ---
-
-function analisarBorda(mensagem) {
-    const input = normalizar(mensagem);
-    const agora = Date.now();
-    const emJanela = (agora - contextoUltimaInteracao.timestamp < CONFIG.TEMPOS.contexto);
-
-    const gatilhos = {
-        temDor: CONFIG.GATILHOS.dor.some(p => input.includes(p)),
-        temVitoria: CONFIG.GATILHOS.vitoria.some(p => input.includes(p)),
-        temAlegria: CONFIG.GATILHOS.alegria.some(p => input.includes(p)),
-        ehSaudacao: CONFIG.GATILHOS.saudacoes.some(s => input.includes(s)),
-        ehPq: (input.includes("pq") || input.includes("porque") || input.includes("por que"))
-    };
-
-    if (gatilhos.ehPq && emJanela && contextoUltimaInteracao.tipo === "acolhimento") {
-        UI.setEstado('lumi-acolhimento', "Explicação");
-        UI.escrever("Existe o desejo de ajudar, mas este é um sistema de código. O apoio humano do seu professor ou professora é o caminho ideal agora.", "msg-acolhimento");
-        return true;
-    }
-    if (gatilhos.temDor) {
-        UI.setEstado('lumi-acolhimento', "Acolhendo");
-        UI.escrever("Sinto muito por este momento. Saiba que o seu professor ou professora está por perto para te ouvir.", "msg-acolhimento");
-        contextoUltimaInteracao = { tipo: "acolhimento", timestamp: agora };
-        return true;
-    }
-    if (gatilhos.ehSaudacao) {
-        contadorPapoSocial++;
-        if (contadorPapoSocial > CONFIG.TEMPOS.social) {
-            UI.setEstado('lumi-drible', "Foco no tema");
-            UI.escrever("Vamos focar no que estamos aprendendo agora?", "msg-drible");
-        } else {
-            UI.setEstado('lumi-idle', "Em sintonia");
-            UI.escrever("Olá! O sistema está pronto. O que vamos descobrir em conjunto?");
-        }
-        return true;
-    }
-    return false;
-}
-
-// --- COMUNICAÇÃO ---
-
-function conectar() {
-    socket = new WebSocket(CONFIG.WS_URL);
-    socket.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            if (!data.corpo_da_dica) throw new Error("Dado incompleto");
-            jaTentouReenviar = false;
-            historicoDicas.push(data.corpo_da_dica);
-            if (historicoDicas.length > CONFIG.MAX_HISTORICO_DICAS) historicoDicas.shift();
-            UI.setEstado('lumi-idle', "Conectado");
-            UI.escrever(data.corpo_da_dica);
-            contextoUltimaInteracao = { tipo: "aula", timestamp: Date.now() };
-        } catch (err) { tentarRecuperar(); }
-    };
-    socket.onclose = () => { UI.setEstado('lumi-off', "Desconectado"); setTimeout(conectar, 3000); };
-    socket.onopen = () => { UI.setEstado('lumi-idle', "Em sintonia"); };
-}
-
-function tentarRecuperar() {
-    if (!jaTentouReenviar) {
-        jaTentouReenviar = true;
-        UI.setEstado('lumi-drible', "Re-sintonizando");
-        setTimeout(() => dispararMensagem(true), 1500);
-    } else {
-        UI.escrever("Houve uma pequena falha de sinal. Pode repetir a última frase?");
-        jaTentouReenviar = false;
-    }
-}
-
-// --- EVENTOS DE INTERAÇÃO ---
-
-// Botão Tradicional (Clique)
-UI.sendBtn.onclick = processarEntrada;
-
-// Botão Irradiar (Segurar para falar)
-if (UI.sttBtn) {
-    UI.sttBtn.onmousedown = () => {
-        if (recognition && !estaGravando) {
-            estaGravando = true;
-            window.speechSynthesis.cancel();
-            UI.input.value = "";
-            UI.setEstado('lumi-captando', "Irradiando..."); // Estado especial de escuta
-            recognition.start();
-        }
-    };
-    UI.sttBtn.onmouseup = () => { if (recognition && estaGravando) recognition.stop(); };
-    UI.sttBtn.onmouseleave = () => { if (recognition && estaGravando) recognition.stop(); }; // Segurança se sair do botão
-    // Touch
-    UI.sttBtn.ontouchstart = (e) => { e.preventDefault(); UI.sttBtn.onmousedown(); };
-    UI.sttBtn.ontouchend = (e) => { e.preventDefault(); UI.sttBtn.onmouseup(); };
-}
-
-UI.input.oninput = () => {
-    clearTimeout(timerEnvioCerebro);
-    clearTimeout(timerAbandono);
-    timerAbandono = setTimeout(() => {
-        if (UI.input.value.trim() !== "") {
-            UI.input.value = '';
-            if (bufferMensagens.length > 0) dispararMensagem();
-            else UI.setEstado('lumi-idle', "Em sintonia");
-        }
-    }, CONFIG.TEMPOS.abandono);
-};
-
-UI.input.onkeydown = (e) => { if (e.key === "Enter") processarEntrada(); };
-
-function normalizar(txt) { return txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); }
-
+// --- INICIALIZAÇÃO ---
 conectar();
+setTimeout(() => {
+    if (!LUMI_ENGINE.state.userName) {
+        LUMI_ENGINE.render("Olá! Sou a Lumi, sua luz para os estudos. Antes de começarmos, como você se chama?");
+    }
+}, 1500);
